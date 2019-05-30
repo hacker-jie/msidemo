@@ -7,7 +7,7 @@
 #define VENDOR_ID	0x8086	// Intel Corporation
 #define DEVICE_ID	0x156f	// E1000_DEV_ID_PCH_SPT_I219_LM
 #define irqID		0x04	// temporary -- an unused IRQ
-#define intID		0x49	// temporary -- IOAPIC mapped
+#define intID		0x7F //0x49	// temporary -- IOAPIC mapped
 
 
 enum {
@@ -98,9 +98,13 @@ static int __init msidemo_init( void )
 	pci_read_config_dword(devp, 0xD8, &msi_cap[2]);	
 	pci_read_config_dword(devp, 0xDC, &msi_cap[3]);	
 
+	printk("msi data=%x\n", msi_cap[3]);
+	printk("msi addr=%x\n", msi_cap[1]);
+	printk("msi_addr=%x\n", msi_cap[0]);
+
 	// configure the I219 to generate Message Signaled Interrupts
 	msi_data = 0x4000 | intID;
-	msi_addr = 0xFEE01008;
+	msi_addr = 0xFEE002f8;
 	msi_ctrl = msi_cap[0] | 0x00010000;
 	pci_write_config_dword(devp, 0xDC, msi_data);
 	pci_write_config_dword(devp, 0xD4, msi_addr);
@@ -109,7 +113,7 @@ static int __init msidemo_init( void )
 	// initialize our module's wait-queue 
 	init_waitqueue_head(&my_wq);
 
-	// install interrupt-handler and enable Pro1000 interrupts
+	// install interrupt-handler and enable I219 interrupts
 	if (request_irq(irqID, my_isr, IRQF_SHARED, modname, &modname ) < 0) {
 		iounmap(io);
 		return -EBUSY;
@@ -122,7 +126,7 @@ static int __init msidemo_init( void )
 }
 
 
-static void __exit msidemo_exit(void )
+static void __exit msidemo_exit(void)
 {
 	// delete this module's pseudo-file
 	remove_proc_entry(modname, NULL);
@@ -138,7 +142,7 @@ static void __exit msidemo_exit(void )
 	pci_write_config_dword(devp, 0xDC, msi_cap[3]);
 
 	// unmap the I219's i/o-memory
-	iounmap( io );
+	iounmap(io);
 
 	printk("<2>Removing \'%s\' module\n", modname);
 }
