@@ -6,8 +6,8 @@
 
 #define VENDOR_ID	0x8086	// Intel Corporation
 #define DEVICE_ID	0x156f	// E1000_DEV_ID_PCH_SPT_I219_LM
-#define irqID		0x04	// temporary -- an unused IRQ
-#define intID		0x49	// temporary -- IOAPIC mapped
+#define irqID		18	// temporary -- an unused IRQ
+#define intID		18	// temporary -- IOAPIC mapped
 
 
 enum {
@@ -100,7 +100,7 @@ irqreturn_t my_isr(int irq, void *dev_id)
 	++irqcount;
 
 	printk("MSIDEMO: irq=%02X  interrupt #%d  ", irq, irqcount); 
-	printk("ICR=%08X \n", interrupt_cause);
+	printk("e1000e ICR=%08X \n", interrupt_cause);
 
 	wake_up_interruptible(&my_wq);
 	iowrite32(interrupt_cause, io + E1000_ICR);
@@ -143,7 +143,7 @@ static int __init msidemo_init(void)
 	io = ioremap_nocache(mmio_base, mmio_size);
 	if (!io)
 		return -ENOSPC;
-
+#if 0
 	// insure the I219-LM has its Bus Master capability enabled
 	pci_read_config_word(devp, 4, &pci_cmd);
 	pci_cmd |= (1 << 2);			// enable Bus Master
@@ -156,12 +156,15 @@ static int __init msidemo_init(void)
 	pci_write_config_dword(devp, 0xDC, msi_data);
 	pci_write_config_dword(devp, 0xD4, msi_addr);
 	pci_write_config_dword(devp, 0xD0, msi_ctrl);
+	irq = irqID;
 
         print_msi_info(devp);
+#endif
 
 	// initialize our module's wait-queue 
 	init_waitqueue_head(&my_wq);
 
+#if 1
 	// Get irq
 	ret = pci_alloc_irq_vectors(devp, 1, 1, PCI_IRQ_MSI);
 	if (ret < 0) {
@@ -170,6 +173,9 @@ static int __init msidemo_init(void)
 	}
 	irq = pci_irq_vector(devp, 0);
 	printk("irq = %d\n", irq);
+
+	print_msi_info(devp);
+#endif
 
 	// install interrupt-handler and enable I219 interrupts
 	if (request_irq(irq, my_isr, IRQF_SHARED, modname, &modname ) < 0) {
