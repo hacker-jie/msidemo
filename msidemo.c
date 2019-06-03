@@ -13,8 +13,8 @@
 
 #define VENDOR_ID	0x8086	// Intel Corporation
 #define DEVICE_ID	0x156f	// E1000_DEV_ID_PCH_SPT_I219_LM
-#define irqID		18	// temporary -- an unused IRQ
-#define intID		18	// temporary -- IOAPIC mapped
+#define irqID		0x4	// temporary -- an unused IRQ
+#define intID		0x49	// temporary -- IOAPIC mapped
 
 
 enum {
