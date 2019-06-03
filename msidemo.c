@@ -1,3 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Testing MSI with e1000e
+ *
+ * Jie Deng <mr.dengjie@gmail.com>
+ */
+
 #include <linux/module.h>	// for init_module() 
 #include <linux/proc_fs.h>	// for create_proc_info_entry() 
 #include <linux/pci.h>		// for pci_get_device()
