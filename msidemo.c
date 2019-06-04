@@ -11,6 +11,7 @@
 #include <linux/interrupt.h>	// for request_irq()
 #include <linux/seq_file.h>	// for sequence files
 #include <linux/irq.h>
+#include "lapic.h"
 
 #define VENDOR_ID	0x8086	// Intel Corporation
 #define DEVICE_ID	0x156f	// E1000_DEV_ID_PCH_SPT_I219_LM
@@ -227,6 +228,8 @@ static int __init msidemo_init(void)
 
 	// create this module's pseudo-file
 	proc_create(modname, 0, NULL, &msidemo_ops);
+
+	dump_esr();
 
 	printk("End of msidemo\n");
 

@@ -2,8 +2,8 @@
 
 ifeq ($(KERNELRELEASE),)
 
-    KERNELDIR ?= /lib/modules/$(shell uname -r)/build
-#    KERNELDIR ?= /lib/modules/4.16.0-041600-generic/build
+#    KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+    KERNELDIR ?= /lib/modules/4.16.0-041600-generic/build
 
     PWD       := $(shell pwd)
 
@@ -22,7 +22,7 @@ else
 
     obj-m	:= msi_demo.o
 
-msi_demo-objs := msidemo.o
+msi_demo-objs := msidemo.o lapic.o
 
 endif
 
