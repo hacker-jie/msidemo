@@ -15,7 +15,7 @@
 #define VENDOR_ID	0x8086	// Intel Corporation
 #define DEVICE_ID	0x156f	// E1000_DEV_ID_PCH_SPT_I219_LM
 #define irqID		131	// temporary -- an unused IRQ
-#define intID		0x85	// temporary -- IOAPIC mapped
+#define intID		0x21	// temporary -- IOAPIC mapped
 
 
 enum {
@@ -41,7 +41,7 @@ static void set_pci_cap_msi(void)
 
         // configure the I219 to generate Message Signaled Interrupts
         msi_data = 0x4000 | intID;
-        msi_addr = 0xfee08004;//0xFEE002f8;
+        msi_addr = 0xfee00008;//0xFEE002f8;
         msi_ctrl = msi_cap[0] | 0x00010000;
         pci_write_config_dword(devp, 0xDC, msi_data);
         pci_write_config_dword(devp, 0xD4, msi_addr);
@@ -141,6 +141,7 @@ irqreturn_t my_isr(int irq, void *dev_id)
 	printk("MSIDEMO: irq=%02X  interrupt #%d  ", irq, irqcount); 
 	printk("e1000e ICR=%08X \n", interrupt_cause);
 
+	set_pci_cap_msi();
 	print_msi_info_isr(devp);
 
 	wake_up_interruptible(&my_wq);
@@ -211,13 +212,6 @@ static int __init msidemo_init(void)
 	irq = pci_irq_vector(devp, 0);
 	printk("irq = %d, %d\n", irq, pci_irq_vector(devp, 0));
 
-	print_msi_info(devp);
-
-#if 1
-	set_pci_cap_msi();
-	print_msi_info(devp);
-#endif
-
 #endif
 
 	// install interrupt-handler and enable I219 interrupts
@@ -226,6 +220,8 @@ static int __init msidemo_init(void)
 		return -EBUSY;
 	}
 	print_msi_info(devp);
+//	set_pci_cap_msi();
+//	print_msi_info(devp);
 
 	iowrite32(0xFFFFFFFF, io + E1000_IMS);
 
