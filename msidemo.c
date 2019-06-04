@@ -10,11 +10,12 @@
 #include <linux/pci.h>		// for pci_get_device()
 #include <linux/interrupt.h>	// for request_irq()
 #include <linux/seq_file.h>	// for sequence files
+#include <linux/irq.h>
 
 #define VENDOR_ID	0x8086	// Intel Corporation
 #define DEVICE_ID	0x156f	// E1000_DEV_ID_PCH_SPT_I219_LM
-#define irqID		129	// temporary -- an unused IRQ
-#define intID		0x26	// temporary -- IOAPIC mapped
+#define irqID		131	// temporary -- an unused IRQ
+#define intID		0x85	// temporary -- IOAPIC mapped
 
 
 enum {
@@ -34,6 +35,19 @@ int		irqcount = 0;
 u32		msi_cap[4];
 int 		irq;
 
+static void set_pci_cap_msi(void)
+{
+        u32 msi_ctrl, msi_addr, msi_data;
+
+        // configure the I219 to generate Message Signaled Interrupts
+        msi_data = 0x4000 | intID;
+        msi_addr = 0xfee08004;//0xFEE002f8;
+        msi_ctrl = msi_cap[0] | 0x00010000;
+        pci_write_config_dword(devp, 0xDC, msi_data);
+        pci_write_config_dword(devp, 0xD4, msi_addr);
+        pci_write_config_dword(devp, 0xD0, msi_ctrl);
+}
+
 static void print_msi_info(struct pci_dev  *devp)
 {
         static int i = 0;
@@ -50,6 +64,24 @@ static void print_msi_info(struct pci_dev  *devp)
         printk("%d. msi ctrl=%x\n", ++i, msi_data[0]);
         printk("%d. msi addr=%x\n", i,   msi_data[1]);
         printk("%d. msi data=%x\n", i,   msi_data[3]);
+}
+
+static void print_msi_info_isr(struct pci_dev  *devp)
+{
+        static int i = 0;
+        u32 msi_data[4];
+
+        if (devp == NULL)
+                return;
+
+        pci_read_config_dword(devp, 0xD0, &msi_data[0]);
+        pci_read_config_dword(devp, 0xD4, &msi_data[1]);
+        pci_read_config_dword(devp, 0xD8, &msi_data[2]);
+        pci_read_config_dword(devp, 0xDC, &msi_data[3]);
+
+        printk("isr %d. msi ctrl=%x\n", ++i, msi_data[0]);
+        printk("isr %d. msi addr=%x\n", i,   msi_data[1]);
+        printk("isr %d. msi data=%x\n", i,   msi_data[3]);
 }
 
 static void seq_print_msi_info(struct pci_dev  *devp, struct seq_file *m)
@@ -109,6 +141,8 @@ irqreturn_t my_isr(int irq, void *dev_id)
 	printk("MSIDEMO: irq=%02X  interrupt #%d  ", irq, irqcount); 
 	printk("e1000e ICR=%08X \n", interrupt_cause);
 
+	print_msi_info_isr(devp);
+
 	wake_up_interruptible(&my_wq);
 	iowrite32(interrupt_cause, io + E1000_ICR);
 	return IRQ_HANDLED;
@@ -117,7 +151,6 @@ irqreturn_t my_isr(int irq, void *dev_id)
 static int __init msidemo_init(void)
 {
 	u16 pci_cmd;
-	u32 msi_ctrl, msi_addr, msi_data;
 	int ret; 
 
 	printk("<1>\nInstalling \'%s\' module\n", modname);
@@ -150,20 +183,16 @@ static int __init msidemo_init(void)
 	io = ioremap_nocache(mmio_base, mmio_size);
 	if (!io)
 		return -ENOSPC;
-#if 1
+#if 0
 	// insure the I219-LM has its Bus Master capability enabled
 	pci_read_config_word(devp, 4, &pci_cmd);
 	pci_cmd |= (1 << 2);			// enable Bus Master
 	pci_write_config_word(devp, 4, pci_cmd);
 
-	// configure the I219 to generate Message Signaled Interrupts
-	msi_data = 0x4000 | intID;
-	msi_addr = 0xfee04004;//0xFEE002f8;
-	msi_ctrl = msi_cap[0] | 0x00010000;
-	pci_write_config_dword(devp, 0xDC, msi_data);
-	pci_write_config_dword(devp, 0xD4, msi_addr);
-	pci_write_config_dword(devp, 0xD0, msi_ctrl);
-	irq = irqID;
+	set_pci_cap_msi();
+
+	irq = irqID; // __this_cpu_read(vector_irq[intID]); //irq = irqID;
+	printk("irq = %d\n", irq);
 
         print_msi_info(devp);
 #endif
@@ -171,17 +200,24 @@ static int __init msidemo_init(void)
 	// initialize our module's wait-queue 
 	init_waitqueue_head(&my_wq);
 
-#if 0
+#if 1
 	// Get irq
 	ret = pci_alloc_irq_vectors(devp, 1, 1, PCI_IRQ_MSI);
 	if (ret < 0) {
 		printk("alloc IRQ_MSI fail, ret=%d\n", ret);
 		return ret;
 	}
+
 	irq = pci_irq_vector(devp, 0);
 	printk("irq = %d, %d\n", irq, pci_irq_vector(devp, 0));
 
 	print_msi_info(devp);
+
+#if 1
+	set_pci_cap_msi();
+	print_msi_info(devp);
+#endif
+
 #endif
 
 	// install interrupt-handler and enable I219 interrupts
@@ -189,6 +225,8 @@ static int __init msidemo_init(void)
 		iounmap(io);
 		return -EBUSY;
 	}
+	print_msi_info(devp);
+
 	iowrite32(0xFFFFFFFF, io + E1000_IMS);
 
 	// create this module's pseudo-file
