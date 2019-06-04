@@ -2,6 +2,8 @@
 #include "apic-defs.h"
 #include "lapic.h"
 
+#define MSR_IA32_APICBASE		0x0000001b
+
 static u32 x2apic_read(unsigned reg)
 {
 	unsigned a, d;
@@ -18,7 +20,7 @@ static void x2apic_write(unsigned reg, u32 val)
 void dump_esr(void)
 {
 	u32 esr;
-	
+
 	x2apic_write(APIC_ESR, 0);
 	esr = x2apic_read(APIC_ESR);
 
@@ -37,7 +39,7 @@ int isr_bit_set(u32 vector)
 	bit = vector % 32;
 
 	isr = x2apic_read(APIC_ISR + offset * 16);
-	return (isr & (1 << bit)) ?  1 : 0;  
+	return (isr & (1 << bit)) ?  1 : 0;
 }
 
 int irr_bit_set(u32 vector)
@@ -48,5 +50,31 @@ int irr_bit_set(u32 vector)
 	bit = vector % 32;
 
 	irr = x2apic_read(APIC_IRR + offset * 16);
-	return (irr & (1 << bit)) ?  1 : 0;  
+	return (irr & (1 << bit)) ?  1 : 0;
+}
+
+int apic_mode(void)
+{
+	u32 a, b, c, d;
+
+	asm ("cpuid" : "=a"(a), "=b"(b), "=c"(c), "=d"(d) : "0"(1));
+	asm ("rdmsr" : "=a"(a), "=d"(d) : "c"(MSR_IA32_APICBASE));
+
+	return (a >> 10) & 0x3;
+}
+
+int enable_x2apic(void)
+{
+	u32 a, b, c, d;
+
+	asm ("cpuid" : "=a"(a), "=b"(b), "=c"(c), "=d"(d) : "0"(1));
+
+	if (c & (1 << 21)) {
+		asm ("rdmsr" : "=a"(a), "=d"(d) : "c"(MSR_IA32_APICBASE));
+		a |= 1 << 10;
+		asm ("wrmsr" : : "a"(a), "d"(d), "c"(MSR_IA32_APICBASE));
+		return 1;
+	} else {
+		return 0;
+	}
 }
