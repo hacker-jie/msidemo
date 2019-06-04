@@ -229,7 +229,7 @@ static int __init msidemo_init(void)
 	// create this module's pseudo-file
 	proc_create(modname, 0, NULL, &msidemo_ops);
 
-	dump_esr();
+//	dump_esr();
 
 	printk("End of msidemo\n");
 
