@@ -90,7 +90,7 @@ void dump_isr(void)
 
 	printk("[ISR start]\n");
 	for (i = 0; i < 8; i++)
-		printk("%8x\n", apic_read(APIC_ISR + i * 16));
+		printk("%08x\n", apic_read(APIC_ISR + i * 16));
 	printk("[ISR end]\n");
 }
 
@@ -100,7 +100,7 @@ void dump_irr(void)
 
 	printk("[IRR start]\n");
 	for (i = 0; i < 8; i++)
-		printk("%8x\n", apic_read(APIC_IRR + i * 16));
+		printk("%08x\n", apic_read(APIC_IRR + i * 16));
 	printk("[IRR end]\n");
 }
 
