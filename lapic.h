@@ -17,5 +17,6 @@ void dump_esr(void);
 int isr_bit_set(u32 vector);
 int irr_bit_set(u32 vector);
 int apic_mode(void);
+int enable_x2apic(void);
 
 #endif // _LAPIC_H
