@@ -84,6 +84,26 @@ void dump_esr(void)
 		(esr & 0x10) ? 1 : 0);
 }
 
+void dump_isr(void)
+{
+	int i;
+
+	printk("[ISR start]\n");
+	for (i = 0; i < 8; i++)
+		printk("%x\n", apic_read(APIC_ISR + i * 16));
+	printk("[ISR end]\n");
+}
+
+void dump_irr(void)
+{
+	int i;
+
+	printk("[IRR start]\n");
+	for (i = 0; i < 8; i++)
+		printk("%x\n", apic_read(APIC_IRR + i * 16));
+	printk("[IRR end]\n");
+}
+
 int isr_bit_set(u32 vector)
 {
 	u32 isr, offset, bit;

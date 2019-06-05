@@ -14,6 +14,8 @@ u32 apic_read(unsigned reg);
 void apic_write(unsigned reg, u32 val);
 u32 apic_id(void);
 void dump_esr(void);
+void dump_isr(void);
+void dump_irr(void);
 int isr_bit_set(u32 vector);
 int irr_bit_set(u32 vector);
 int apic_mode(void);
