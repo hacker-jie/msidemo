@@ -112,9 +112,15 @@ static int msidemo_show(struct seq_file *m, void *v)
 
 	oldcount = irqcount;
         iowrite32(1<<4, io + E1000_ICS);
+	// dump_esr
+	dump_esr();
+
         wait_event_interruptible(my_wq, irqcount != oldcount);
 
 	seq_print_msi_info(devp, m);
+
+	seq_printf(m, "apic id = %x\n", apic_read(APIC_ID));
+	seq_printf(m, "apic id = %x\n", apic_read(APIC_LVR));
 
 	return 0;
 }
@@ -228,8 +234,6 @@ static int __init msidemo_init(void)
 
 	// create this module's pseudo-file
 	proc_create(modname, 0, NULL, &msidemo_ops);
-
-//	dump_esr();
 
 	printk("End of msidemo\n");
 
