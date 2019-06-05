@@ -72,7 +72,7 @@ void dump_esr(void)
 {
 	u32 esr;
 
-	x2apic_write(APIC_ESR, 0);
+	apic_write(APIC_ESR, 0);
 	esr = apic_read(APIC_ESR);
 
 	printk("[ESR] send ill = %x, received ill = %x, ill reg access = %x, redir ipi = %x\n",
