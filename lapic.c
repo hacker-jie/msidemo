@@ -1,19 +1,21 @@
 #include <linux/kernel.h>
+#include <asm/fixmap.h>
 #include "apic-defs.h"
 #include "lapic.h"
 
 #define MSR_IA32_APICBASE		0x0000001b
 
-void *g_apic = (void *)0xfee00000;
+// #define APIC_BASE (void *)0xfee00000;
+#define APIC_BASE (fix_to_virt(FIX_APIC_BASE))
 
 static u32 xapic_read(unsigned reg)
 {
-    return *(volatile u32 *)(g_apic + reg);
+    return *(volatile u32 *)(APIC_BASE + reg);
 }
 
 static void xapic_write(unsigned reg, u32 val)
 {
-    *(volatile u32 *)(g_apic + reg) = val;
+    *(volatile u32 *)(APIC_BASE + reg) = val;
 }
 
 static u32 xapic_id(void)
