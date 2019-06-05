@@ -4,6 +4,31 @@
 
 #define MSR_IA32_APICBASE		0x0000001b
 
+void *g_apic = (void *)0xfee00000;
+
+static u32 xapic_read(unsigned reg)
+{
+    return *(volatile u32 *)(g_apic + reg);
+}
+
+static void xapic_write(unsigned reg, u32 val)
+{
+    *(volatile u32 *)(g_apic + reg) = val;
+}
+
+static uint32_t xapic_id(void)
+{
+    return xapic_read(APIC_ID) >> 24;
+}
+
+static const struct apic_ops xapic_ops = {
+    .reg_read = xapic_read,
+    .reg_write = xapic_write,
+    .id = xapic_id,
+};
+
+static const struct apic_ops *apic_ops = &xapic_ops;
+
 static u32 x2apic_read(unsigned reg)
 {
 	unsigned a, d;
@@ -16,6 +41,17 @@ static void x2apic_write(unsigned reg, u32 val)
 {
 	asm volatile ("wrmsr" : : "a"(val), "d"(0), "c"(APIC_BASE_MSR + reg/16));
 }
+
+static uint32_t x2apic_id(void)
+{
+    return x2apic_read(APIC_ID);
+}
+
+static const struct apic_ops x2apic_ops = {
+    .reg_read = x2apic_read,
+    .reg_write = x2apic_write,
+    .id = x2apic_id,
+};
 
 void dump_esr(void)
 {
@@ -73,6 +109,7 @@ int enable_x2apic(void)
 		asm ("rdmsr" : "=a"(a), "=d"(d) : "c"(MSR_IA32_APICBASE));
 		a |= 1 << 10;
 		asm ("wrmsr" : : "a"(a), "d"(d), "c"(MSR_IA32_APICBASE));
+		apic_ops = &x2apic_ops;
 		return 1;
 	} else {
 		return 0;
