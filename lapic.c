@@ -16,7 +16,7 @@ static void xapic_write(unsigned reg, u32 val)
     *(volatile u32 *)(g_apic + reg) = val;
 }
 
-static uint32_t xapic_id(void)
+static u32 xapic_id(void)
 {
     return xapic_read(APIC_ID) >> 24;
 }
@@ -42,7 +42,7 @@ static void x2apic_write(unsigned reg, u32 val)
 	asm volatile ("wrmsr" : : "a"(val), "d"(0), "c"(APIC_BASE_MSR + reg/16));
 }
 
-static uint32_t x2apic_id(void)
+static u32 x2apic_id(void)
 {
     return x2apic_read(APIC_ID);
 }
@@ -53,12 +53,27 @@ static const struct apic_ops x2apic_ops = {
     .id = x2apic_id,
 };
 
+u32 apic_read(unsigned reg)
+{
+    return apic_ops->reg_read(reg);
+}
+
+void apic_write(unsigned reg, u32 val)
+{
+    apic_ops->reg_write(reg, val);
+}
+
+u32 apic_id(void)
+{
+    return apic_ops->id();
+}
+
 void dump_esr(void)
 {
 	u32 esr;
 
 	x2apic_write(APIC_ESR, 0);
-	esr = x2apic_read(APIC_ESR);
+	esr = apic_read(APIC_ESR);
 
 	printk("[ESR] send ill = %x, received ill = %x, ill reg access = %x, redir ipi = %x\n",
 		(esr & APIC_ESR_SENDILL) ? 1 : 0,
@@ -74,7 +89,7 @@ int isr_bit_set(u32 vector)
 	offset = vector / 32;
 	bit = vector % 32;
 
-	isr = x2apic_read(APIC_ISR + offset * 16);
+	isr = apic_read(APIC_ISR + offset * 16);
 	return (isr & (1 << bit)) ?  1 : 0;
 }
 
@@ -85,7 +100,7 @@ int irr_bit_set(u32 vector)
 	offset = vector / 32;
 	bit = vector % 32;
 
-	irr = x2apic_read(APIC_IRR + offset * 16);
+	irr = apic_read(APIC_IRR + offset * 16);
 	return (irr & (1 << bit)) ?  1 : 0;
 }
 
