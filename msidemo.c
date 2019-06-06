@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Testing MSI with e1000e
+ * Testing MSI with I219
  *
  * Jie Deng <mr.dengjie@gmail.com>
  */
